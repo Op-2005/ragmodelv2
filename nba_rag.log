@@ -1,29 +1,20 @@
-2025-05-07 00:33:50,656 - INFO - Database not found. Creating new database...
-2025-05-07 00:33:50,657 - INFO - Loading CSV from data/nba_stats.csv
-2025-05-07 00:33:50,680 - INFO - Loaded 1181 rows with 38 columns
-2025-05-07 00:33:50,680 - INFO - Creating SQLite database at data/nba_stats.db
-2025-05-07 00:33:50,719 - INFO - Database created successfully with table 'player_game_stats'
-2025-05-07 00:33:50,720 - WARNING - WARNING! max_length is not default parameter.
-                    max_length was transferred to model_kwargs.
-                    Please make sure that max_length is what you intended.
-2025-05-07 00:34:00,162 - INFO - Use pytorch device_name: mps
-2025-05-07 00:34:00,162 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-mpnet-base-v2
-2025-05-07 00:34:01,827 - WARNING - Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
-2025-05-07 00:39:54,591 - INFO - Using existing database at data/nba_stats.db
-2025-05-07 00:39:54,593 - WARNING - WARNING! max_length is not default parameter.
-                    max_length was transferred to model_kwargs.
-                    Please make sure that max_length is what you intended.
-2025-05-07 00:40:02,209 - INFO - Use pytorch device_name: mps
-2025-05-07 00:40:02,209 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-mpnet-base-v2
-2025-05-07 00:41:27,300 - INFO - Using existing database at data/nba_stats.db
-2025-05-07 00:41:33,270 - INFO - Use pytorch device_name: mps
-2025-05-07 00:41:33,270 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-mpnet-base-v2
-2025-05-07 00:42:10,853 - INFO - Using existing database at data/nba_stats.db
-2025-05-07 00:42:16,018 - INFO - Use pytorch device_name: mps
-2025-05-07 00:42:16,018 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-mpnet-base-v2
-2025-05-07 00:43:04,571 - INFO - Using existing database at data/nba_stats.db
-2025-05-07 00:43:10,296 - INFO - Use pytorch device_name: mps
-2025-05-07 00:43:10,296 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-mpnet-base-v2
-2025-05-07 00:44:06,863 - INFO - Using existing database at data/nba_stats.db
-2025-05-07 00:44:12,869 - INFO - Use pytorch device_name: mps
-2025-05-07 00:44:12,870 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-mpnet-base-v2
+2025-05-07 10:58:19,445 - INFO - Using existing database at data/nba_stats.db
+2025-05-07 10:58:46,166 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-05-07 10:58:46,167 - INFO - Retrying request to /chat/completions in 0.394618 seconds
+2025-05-07 10:58:46,675 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-05-07 10:58:46,676 - INFO - Retrying request to /chat/completions in 0.867598 seconds
+2025-05-07 10:58:47,813 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-05-07 10:59:32,627 - INFO - Using existing database at data/nba_stats.db
+2025-05-07 10:59:54,117 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-05-07 10:59:54,118 - INFO - Retrying request to /chat/completions in 0.492011 seconds
+2025-05-07 10:59:54,715 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-05-07 10:59:54,716 - INFO - Retrying request to /chat/completions in 0.884792 seconds
+2025-05-07 10:59:55,716 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-05-07 11:20:31,650 - INFO - Using existing database at data/nba_stats.db
+2025-05-07 11:20:40,864 - INFO - Use pytorch device_name: mps
+2025-05-07 11:20:40,864 - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-mpnet-base-v2
+2025-05-07 11:21:32,267 - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2025-05-07 11:21:34,595 - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2025-05-07 11:21:46,486 - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 529 "
+2025-05-07 11:21:46,486 - INFO - Retrying request to /v1/messages in 0.470254 seconds
+2025-05-07 11:21:54,572 - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"

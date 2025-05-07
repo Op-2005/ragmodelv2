@@ -36,7 +36,7 @@ def setup_database():
     
     return db_path
 
-def initialize_pipeline(model_name="llama4-maverick"):
+def initialize_pipeline(model_name="claude-3-5-sonnet-20241022"):
     """Initialize the RAG pipeline."""
     # Set up database
     db_path = setup_database()
@@ -82,7 +82,7 @@ def interactive_mode(pipeline):
 
 if __name__ == "__main__":
     # Initialize pipeline with model name
-    model_name = "mistralai/Mistral-7B-Instruct-v0.2"  # Use a publicly available Hugging Face model
+    model_name = "claude-3-5-sonnet-20241022"  # Use Anthropic Claude model
     
     print(f"Initializing RAG pipeline with {model_name}...")
     pipeline = initialize_pipeline(model_name)
