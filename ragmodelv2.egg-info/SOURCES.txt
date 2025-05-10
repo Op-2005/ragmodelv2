@@ -1,6 +1,0 @@
-setup.py
-ragmodelv2.egg-info/PKG-INFO
-ragmodelv2.egg-info/SOURCES.txt
-ragmodelv2.egg-info/dependency_links.txt
-ragmodelv2.egg-info/requires.txt
-ragmodelv2.egg-info/top_level.txt
