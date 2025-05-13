@@ -1,6 +1,9 @@
 import sqlite3
 import pandas as pd
+import logging
 from langchain_community.utilities import SQLDatabase
+
+logger = logging.getLogger(__name__)
 
 class DatabaseConnector:
     """Handles database connections and operations."""
@@ -18,9 +21,10 @@ class DatabaseConnector:
             self.conn = sqlite3.connect(self.db_path)
             self.cursor = self.conn.cursor()
             self.langchain_db = SQLDatabase.from_uri(f"sqlite:///{self.db_path}")
+            logger.info(f"Connected to database at {self.db_path}")
             return True
         except Exception as e:
-            print(f"Error connecting to database: {str(e)}")
+            logger.error(f"Error connecting to database: {str(e)}")
             return False
     
     def close(self):
@@ -29,6 +33,7 @@ class DatabaseConnector:
             self.conn.close()
             self.conn = None
             self.cursor = None
+            logger.info("Database connection closed")
     
     def execute_query(self, query):
         """Execute SQL query and return results."""
@@ -36,10 +41,11 @@ class DatabaseConnector:
             self.connect()
         
         try:
+            logger.debug(f"Executing query: {query}")
             result = self.cursor.execute(query)
             return result.fetchall()
         except Exception as e:
-            print(f"Error executing query: {str(e)}")
+            logger.error(f"Error executing query: {str(e)}\nQuery: {query}")
             return None
     
     def get_table_schema(self, table_name="player_game_stats"):
@@ -60,7 +66,9 @@ class DatabaseConnector:
                     "notnull": col[3],
                     "pk": col[5]
                 })
+            logger.info(f"Retrieved schema for table '{table_name}' with {len(schema)} columns")
             return schema
+        logger.warning(f"Could not retrieve schema for table '{table_name}'")
         return None
     
     def get_distinct_values(self, column, table="player_game_stats", limit=1000):
@@ -72,5 +80,36 @@ class DatabaseConnector:
         result = self.execute_query(query)
         
         if result:
-            return [item[0] for item in result]
+            values = [item[0] for item in result]
+            logger.debug(f"Retrieved {len(values)} distinct values for '{column}' in table '{table}'")
+            return values
+        logger.warning(f"No distinct values found for '{column}' in table '{table}'")
         return []
+    
+    def get_table_names(self):
+        """Get all table names in the database."""
+        if not self.conn:
+            self.connect()
+            
+        query = "SELECT name FROM sqlite_master WHERE type='table'"
+        result = self.execute_query(query)
+        
+        if result:
+            tables = [item[0] for item in result]
+            logger.info(f"Database contains {len(tables)} tables: {', '.join(tables)}")
+            return tables
+        return []
+    
+    def get_row_count(self, table_name):
+        """Get the number of rows in a table."""
+        if not self.conn:
+            self.connect()
+            
+        query = f"SELECT COUNT(*) FROM {table_name}"
+        result = self.execute_query(query)
+        
+        if result and result[0]:
+            count = result[0][0]
+            logger.info(f"Table '{table_name}' contains {count} rows")
+            return count
+        return 0

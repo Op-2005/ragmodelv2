@@ -4,51 +4,57 @@ import re
 class SQLQueryGenerator:
     """Generate SQL queries from natural language using LLM."""
     
-    def __init__(self, llm_manager, db_connector):
-        """Initialize with LLM manager and database connector."""
+    def __init__(self, llm_manager, db_connector, table_name="player_game_stats"):
+        """Initialize with LLM manager and database connector.
+        
+        Args:
+            llm_manager: LLM manager instance
+            db_connector: Database connector instance
+            table_name: Name of the table to query
+        """
         self.llm = llm_manager
         self.db = db_connector
+        self.table_name = table_name
         
         # Get database schema
-        self.table_schema = self.db.get_table_schema()
+        self.table_schema = self.db.get_table_schema(table_name=self.table_name)
     
     def generate_sql_query(self, user_query, extracted_entities=None):
         """Generate SQL query from user query and extracted entities."""
         # Format table schema for prompt
         schema_str = self._format_schema_for_prompt()
         
-        # Create prompt template
-        prompt_template = PromptTemplate(
-            input_variables=["query", "schema", "entities"],
-            template="""
-            You are an expert SQL query generator for an NBA statistics database.
-            
-            Given a natural language query, generate a valid SQL query to answer the question.
-            
-            Database schema:
-            {schema}
-            
-            Extracted entities:
-            {entities}
-            
-            User question: {query}
-            
-            Generate only the SQL query with no other text. Make sure the query is valid SQL and uses only columns that exist in the schema.
-            
-            SQL query:
-            """
-        )
+        # Determine the dataset type based on table name
+        dataset_type = "UCLA women's basketball" if self.table_name == "ucla_player_stats" else "NBA"
         
-        # Format entities for prompt
-        entities_str = "None" if not extracted_entities else str(extracted_entities)
+        # Create prompt for SQL generation
+        prompt = f"""
+        You are an expert SQL query generator for a {dataset_type} statistics database.
+        
+        Given a natural language query, generate a valid SQL query to answer the question.
+        
+        Database schema:
+        {schema_str}
+        
+        Extracted entities:
+        {extracted_entities if extracted_entities else 'None'}
+        
+        User question: {user_query}
+        
+        IMPORTANT NOTES:
+        1. For UCLA women's basketball data, exclude rows where Name='Totals' or Name='TM' or Name='Team' as these are team totals, not individual players.
+        2. When querying for individual player stats, always add WHERE Name NOT IN ('Totals', 'TM', 'Team') to your query.
+        3. Make sure the query is valid SQL and uses only columns that exist in the schema.
+        4. For comparison queries between players, use multiple SELECT statements or subqueries to get statistics for each player.
+        5. If the query is asking for a recommendation or comparison between players, return data for all players mentioned so the LLM can make the comparison.
+        6. CRITICAL: Always put column names in double quotes, especially for reserved SQL keywords. For example, use "TO" instead of TO for the turnovers column.
+        
+        Generate only the SQL query with no other text.
+        
+        SQL query:
+        """
         
         # Generate SQL query
-        prompt = prompt_template.format(
-            query=user_query,
-            schema=schema_str,
-            entities=entities_str
-        )
-        
         sql_query = self.llm.generate_text(prompt)
         
         # Extract just the SQL query (remove any explanations)
@@ -59,9 +65,9 @@ class SQLQueryGenerator:
     def _format_schema_for_prompt(self):
         """Format database schema for LLM prompt."""
         if not self.table_schema:
-            return "Table: player_game_stats (schema not available)"
+            return f"Table: {self.table_name} (schema not available)"
         
-        schema_lines = ["Table: player_game_stats"]
+        schema_lines = [f"Table: {self.table_name}"]
         for col in self.table_schema:
             schema_lines.append(f"- {col['name']} ({col['type']})")
         
