@@ -2,7 +2,7 @@ import os
 import logging
 import argparse
 from src.llm_utils import LLMManager
-from src.data_loader import load_csv_to_dataframe, create_sqlite_database, load_ucla_wbb_to_dataframe, create_ucla_wbb_database
+from src.data_loader import create_ucla_wbb_database
 from src.db_connector import DatabaseConnector
 from src.rag_pipeline import RAGPipeline
 from dotenv import load_dotenv
@@ -22,25 +22,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-def setup_nba_database():
-    """Set up NBA database if it doesn't exist."""
-    db_path = 'data/nba_stats.db'
-    
-    # Check if database already exists
-    if not os.path.exists(db_path):
-        logger.info("NBA database not found. Creating new database...")
-        
-        # Load CSV data
-        csv_path = 'data/nba_stats.csv'
-        df = load_csv_to_dataframe(csv_path)
-        
-        # Create database
-        create_sqlite_database(df, db_path)
-    else:
-        logger.info(f"Using existing NBA database at {db_path}")
-    
-    return db_path
-
 def setup_ucla_database():
     """Set up UCLA women's basketball database if it doesn't exist."""
     db_path = 'data/ucla_wbb.db'
@@ -57,15 +38,11 @@ def setup_ucla_database():
     
     return db_path
 
-def initialize_pipeline(dataset="nba", model_name="claude-3-5-sonnet-20241022"):
-    """Initialize the RAG pipeline for the specified dataset."""
-    # Set up database based on dataset choice
-    if dataset.lower() == "ucla":
-        db_path = setup_ucla_database()
-        table_name = "ucla_player_stats"
-    else:  # Default to NBA
-        db_path = setup_nba_database()
-        table_name = "player_game_stats"
+def initialize_pipeline(model_name="claude-3-5-sonnet-20241022"):
+    """Initialize the RAG pipeline for UCLA women's basketball data."""
+    # Set up database
+    db_path = setup_ucla_database()
+    table_name = "ucla_player_stats"
     
     # Initialize LLM
     llm_manager = LLMManager(model_name=model_name)
@@ -74,14 +51,14 @@ def initialize_pipeline(dataset="nba", model_name="claude-3-5-sonnet-20241022"):
     db_connector = DatabaseConnector(db_path)
     
     # Initialize RAG pipeline with dataset info
-    rag_pipeline = RAGPipeline(llm_manager, db_connector, table_name=table_name, dataset_type=dataset.lower())
+    rag_pipeline = RAGPipeline(llm_manager, db_connector, table_name=table_name, dataset_type="ucla")
     
     return rag_pipeline
 
-def interactive_mode(pipeline, dataset_name):
+def interactive_mode(pipeline):
     """Run in interactive command-line mode."""
     print("\n" + "="*50)
-    print(f"{dataset_name.upper()} Statistics RAG System")
+    print("UCLA WOMEN'S BASKETBALL Statistics RAG System")
     print("Type 'exit' to quit")
     print("="*50 + "\n")
     
@@ -110,17 +87,14 @@ def interactive_mode(pipeline, dataset_name):
 
 if __name__ == "__main__":
     # Set up command line arguments
-    parser = argparse.ArgumentParser(description='Run RAG system for sports statistics')
-    parser.add_argument('--dataset', type=str, default='nba', choices=['nba', 'ucla'],
-                        help='Dataset to use: nba or ucla (default: nba)')
+    parser = argparse.ArgumentParser(description='Run UCLA Women\'s Basketball Statistics RAG System')
     parser.add_argument('--model', type=str, default='claude-3-5-sonnet-20241022',
                         help='LLM model to use (default: claude-3-5-sonnet-20241022)')
     
     args = parser.parse_args()
     
-    # Initialize pipeline with selected dataset and model
-    print(f"Initializing {args.dataset.upper()} RAG pipeline with {args.model}...")
-    pipeline = initialize_pipeline(dataset=args.dataset, model_name=args.model)
+    # Initialize pipeline with selected model
+    pipeline = initialize_pipeline(model_name=args.model)
     
     # Run in interactive mode
-    interactive_mode(pipeline, args.dataset)
+    interactive_mode(pipeline)

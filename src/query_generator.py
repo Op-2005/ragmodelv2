@@ -2,15 +2,15 @@ from langchain_core.prompts import PromptTemplate
 import re
 
 class SQLQueryGenerator:
-    """Generate SQL queries from natural language using LLM."""
+    """Generate SQL queries from natural language for UCLA women's basketball data."""
     
-    def __init__(self, llm_manager, db_connector, table_name="player_game_stats"):
+    def __init__(self, llm_manager, db_connector, table_name="ucla_player_stats"):
         """Initialize with LLM manager and database connector.
         
         Args:
             llm_manager: LLM manager instance
             db_connector: Database connector instance
-            table_name: Name of the table to query
+            table_name: Name of the table to query (default: ucla_player_stats)
         """
         self.llm = llm_manager
         self.db = db_connector
@@ -24,12 +24,9 @@ class SQLQueryGenerator:
         # Format table schema for prompt
         schema_str = self._format_schema_for_prompt()
         
-        # Determine the dataset type based on table name
-        dataset_type = "UCLA women's basketball" if self.table_name == "ucla_player_stats" else "NBA"
-        
         # Create prompt for SQL generation
         prompt = f"""
-        You are an expert SQL query generator for a {dataset_type} statistics database.
+        You are an expert SQL query generator for a UCLA women's basketball statistics database.
         
         Given a natural language query, generate a valid SQL query to answer the question.
         
@@ -42,7 +39,7 @@ class SQLQueryGenerator:
         User question: {user_query}
         
         IMPORTANT NOTES:
-        1. For UCLA women's basketball data, exclude rows where Name='Totals' or Name='TM' or Name='Team' as these are team totals, not individual players.
+        1. Exclude rows where Name='Totals' or Name='TM' or Name='Team' as these are team totals, not individual players.
         2. When querying for individual player stats, always add WHERE Name NOT IN ('Totals', 'TM', 'Team') to your query.
         3. Make sure the query is valid SQL and uses only columns that exist in the schema.
         4. For comparison queries between players, use multiple SELECT statements or subqueries to get statistics for each player.

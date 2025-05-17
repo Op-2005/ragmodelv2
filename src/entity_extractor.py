@@ -4,83 +4,56 @@ from thefuzz import process
 from langchain_core.prompts import PromptTemplate
 
 class EntityExtractor:
-    """Extract and resolve entities from user queries."""
+    """Extract and resolve entities from user queries for UCLA women's basketball data."""
     
-    def __init__(self, db_connector, llm_manager, table_name="player_game_stats", dataset_type="nba"):
+    def __init__(self, db_connector, llm_manager, table_name="ucla_player_stats"):
         """Initialize with database connector and LLM manager.
         
         Args:
             db_connector: Database connector instance
             llm_manager: LLM manager instance
-            table_name: Name of the table to query
-            dataset_type: Type of dataset (nba or ucla)
+            table_name: Name of the table to query (default: ucla_player_stats)
         """
         self.db = db_connector
         self.llm = llm_manager
         self.table_name = table_name
-        self.dataset_type = dataset_type
         self.entity_cache = {}  # Cache for entity resolution results
         
         # Pre-load common entities for faster matching
         self._load_common_entities()
     
     def _load_common_entities(self):
-        """Load common entities from database based on dataset type."""
+        """Load common entities from UCLA women's basketball database."""
         # Connect to database if not already connected
         if self.db.conn is None:
             self.db.connect()
             
-        if self.dataset_type == "ucla":
-            # UCLA women's basketball specific entities
-            self.players = self.db.get_distinct_values("Name", table=self.table_name)
-            self.player_numbers = self.db.get_distinct_values("No", table=self.table_name)
-            self.opponents = self.db.get_distinct_values("Opponent", table=self.table_name)
-            self.teams = ["UCLA"]  # Only one team in this dataset
-            self.seasons = ["2024-2025"]  # Only one season in this dataset
-        else:
-            # NBA specific entities
-            self.teams = self.db.get_distinct_values("teamName", table=self.table_name)
-            self.players = self.db.get_distinct_values("personName", table=self.table_name)
-            self.opponents = self.db.get_distinct_values("opponent", table=self.table_name)
-            self.seasons = self.db.get_distinct_values("season_year", table=self.table_name)
+        # UCLA women's basketball specific entities
+        self.players = self.db.get_distinct_values("Name", table=self.table_name)
+        self.player_numbers = self.db.get_distinct_values("No", table=self.table_name)
+        self.opponents = self.db.get_distinct_values("Opponent", table=self.table_name)
+        self.teams = ["UCLA"]  # Only one team in this dataset
+        self.seasons = ["2024-2025"]  # Only one season in this dataset
     
     def extract_entities(self, query):
         """Extract entities from query using LLM."""
-        # Create prompt template based on dataset type
-        if self.dataset_type == "ucla":
-            prompt = f"""
-            Extract entities from this UCLA women's basketball statistics query.
-            Return a JSON object with these fields:
-            - player_names: Array of player names mentioned (can be multiple players)
-            - player_number: Jersey number mentioned (if any)
-            - opponent: Opponent team mentioned (if any)
-            - statistic: Specific statistic mentioned (points, rebounds, assists, etc.)
-            - comparison: Any comparison operators (>, <, =, etc.)
-            - value: Any numeric value mentioned for comparison
-            - exclude_totals: Set to true if the query mentions excluding team totals or only individual players
-            - is_comparison_query: Set to true if the query is asking to compare multiple players
-            
-            Query: {query}
-            
-            JSON output:
-            """
-        else:
-            # NBA prompt
-            prompt = f"""
-            Extract entities from this NBA statistics query.
-            Return a JSON object with these fields:
-            - player_name: Full name of player mentioned (if any)
-            - team_name: Team name mentioned (if any)
-            - opponent: Opponent team mentioned (if any)
-            - season: Season mentioned (if any)
-            - statistic: Specific statistic mentioned (points, rebounds, assists, etc.)
-            - comparison: Any comparison operators (>, <, =, etc.)
-            - value: Any numeric value mentioned for comparison
-            
-            Query: {query}
-            
-            JSON output:
-            """
+        # Create prompt for UCLA women's basketball
+        prompt = f"""
+        Extract entities from this UCLA women's basketball statistics query.
+        Return a JSON object with these fields:
+        - player_names: Array of player names mentioned (can be multiple players)
+        - player_number: Jersey number mentioned (if any)
+        - opponent: Opponent team mentioned (if any)
+        - statistic: Specific statistic mentioned (points, rebounds, assists, etc.)
+        - comparison: Any comparison operators (>, <, =, etc.)
+        - value: Any numeric value mentioned for comparison
+        - exclude_totals: Set to true if the query mentions excluding team totals or only individual players
+        - is_comparison_query: Set to true if the query is asking to compare multiple players
+        
+        Query: {query}
+        
+        JSON output:
+        """
         
         # Generate extraction using LLM
         result = self.llm.generate_text(prompt)
@@ -170,53 +143,41 @@ class EntityExtractor:
     
     def _resolve_entities(self, entities):
         """Resolve extracted entities to database entries using fuzzy matching."""
-        resolved = entities.copy()
+        resolved = {}
         
-        # Handle the new player_names array format
-        if entities.get("player_names") and isinstance(entities["player_names"], list):
-            resolved_players = []
-            for player_name in entities["player_names"]:
-                if isinstance(player_name, str):
-                    player_match = self._fuzzy_match(player_name, self.players)
-                    if player_match:
-                        resolved_players.append(player_match)
+        # Handle player names - could be a single string or an array
+        if entities.get("player_names"):
+            player_names = entities["player_names"]
+            # Convert to list if it's a string
+            if isinstance(player_names, str):
+                player_names = [player_names]
             
-            if resolved_players:
-                resolved["player_names"] = resolved_players
-        # Backward compatibility with old format
-        elif entities.get("player_name"):
-            player_match = self._fuzzy_match(entities["player_name"], self.players)
-            if player_match:
-                resolved["player_name"] = player_match
-                # Also add to player_names for consistency
-                resolved["player_names"] = [player_match]
-        
-        # Handle dataset-specific entities
-        if self.dataset_type == "ucla":
-            # Resolve player number for UCLA dataset
-            if entities.get("player_number"):
-                # Convert to string for matching
-                player_num = str(entities["player_number"])
-                if player_num in self.player_numbers:
-                    resolved["player_number"] = player_num
-        else:
-            # Resolve team name for NBA dataset
-            if entities.get("team_name"):
-                team_match = self._fuzzy_match(entities["team_name"], self.teams)
-                if team_match:
-                    resolved["team_name"] = team_match
+            # Resolve each player name
+            resolved_names = []
+            for name in player_names:
+                player_match = self._fuzzy_match(name, self.players)
+                if player_match:
+                    resolved_names.append(player_match)
             
-            # Resolve season for NBA dataset
-            if entities.get("season"):
-                season_match = self._fuzzy_match(entities["season"], self.seasons)
-                if season_match:
-                    resolved["season"] = season_match
+            if resolved_names:
+                resolved["player_names"] = resolved_names
         
-        # Resolve opponent (common for both datasets)
+        # Handle player number
+        if entities.get("player_number"):
+            number_match = self._fuzzy_match(str(entities["player_number"]), self.player_numbers)
+            if number_match:
+                resolved["player_number"] = number_match
+        
+        # Resolve opponent
         if entities.get("opponent"):
             opponent_match = self._fuzzy_match(entities["opponent"], self.opponents)
             if opponent_match:
                 resolved["opponent"] = opponent_match
+        
+        # Copy other fields directly
+        for field in ["statistic", "comparison", "value", "exclude_totals", "is_comparison_query"]:
+            if field in entities and entities[field] is not None:
+                resolved[field] = entities[field]
         
         return resolved
     

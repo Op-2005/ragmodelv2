@@ -50,12 +50,11 @@ def initialize_pipeline(model_name="claude-3-5-sonnet-20241022"):
     # Initialize database connector
     db_connector = DatabaseConnector(db_path)
     
-    # Initialize RAG pipeline with dataset info
+    # Initialize RAG pipeline
     rag_pipeline = RAGPipeline(
         llm_manager, 
         db_connector, 
-        table_name="ucla_player_stats", 
-        dataset_type="ucla"
+        table_name="ucla_player_stats"
     )
     
     return rag_pipeline

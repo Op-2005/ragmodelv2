@@ -1,25 +1,23 @@
 class RAGPipeline:
-    """Main RAG pipeline combining all components."""
+    """Main RAG pipeline for UCLA women's basketball data."""
     
-    def __init__(self, llm_manager, db_connector, table_name="player_game_stats", dataset_type="nba"):
+    def __init__(self, llm_manager, db_connector, table_name="ucla_player_stats"):
         """Initialize pipeline with LLM manager and database connector.
         
         Args:
             llm_manager: LLM manager instance
             db_connector: Database connector instance
-            table_name: Name of the table to query
-            dataset_type: Type of dataset (nba or ucla)
+            table_name: Name of the table to query (default: ucla_player_stats)
         """
         self.llm = llm_manager
         self.db = db_connector
         self.table_name = table_name
-        self.dataset_type = dataset_type
         
         # Initialize components
         from src.entity_extractor import EntityExtractor
         from src.query_generator import SQLQueryGenerator
         
-        self.entity_extractor = EntityExtractor(self.db, self.llm, table_name=self.table_name, dataset_type=self.dataset_type)
+        self.entity_extractor = EntityExtractor(self.db, self.llm, table_name=self.table_name)
         self.query_generator = SQLQueryGenerator(self.llm, self.db, table_name=self.table_name)
     
     def process_query(self, user_query):
@@ -60,14 +58,9 @@ class RAGPipeline:
     
     def _generate_response(self, user_query, sql_query, query_results):
         """Generate natural language response from query results."""
-        # Create prompt for response generation based on dataset type
-        if self.dataset_type == "ucla":
-            dataset_description = "UCLA women's basketball statistics"
-        else:
-            dataset_description = "NBA statistics"
-            
+        # Create prompt for response generation
         prompt = f"""
-        Based on the following information, provide a natural language answer to the user's question about {dataset_description}.
+        Based on the following information, provide a natural language answer to the user's question about UCLA women's basketball statistics.
         
         User question: {user_query}
         

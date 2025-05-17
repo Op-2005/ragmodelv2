@@ -6,10 +6,10 @@ from langchain_community.utilities import SQLDatabase
 logger = logging.getLogger(__name__)
 
 class DatabaseConnector:
-    """Handles database connections and operations."""
+    """Handles database connections and operations for UCLA women's basketball data."""
     
-    def __init__(self, db_path='data/nba_stats.db'):
-        """Initialize with path to SQLite database."""
+    def __init__(self, db_path='data/ucla_wbb.db'):
+        """Initialize with path to SQLite database (default: ucla_wbb.db)."""
         self.db_path = db_path
         self.conn = None
         self.cursor = None
@@ -48,7 +48,7 @@ class DatabaseConnector:
             logger.error(f"Error executing query: {str(e)}\nQuery: {query}")
             return None
     
-    def get_table_schema(self, table_name="player_game_stats"):
+    def get_table_schema(self, table_name="ucla_player_stats"):
         """Get schema for a table."""
         if not self.conn:
             self.connect()
@@ -71,7 +71,7 @@ class DatabaseConnector:
         logger.warning(f"Could not retrieve schema for table '{table_name}'")
         return None
     
-    def get_distinct_values(self, column, table="player_game_stats", limit=1000):
+    def get_distinct_values(self, column, table="ucla_player_stats", limit=1000):
         """Get distinct values for a column."""
         if not self.conn:
             self.connect()
