@@ -35,17 +35,21 @@ class DatabaseConnector:
             self.cursor = None
             logger.info("Database connection closed")
     
-    def execute_query(self, query):
-        """Execute SQL query and return results."""
+    def execute_query(self, query, return_error=False):
+        """Execute SQL query and return results. If return_error=True, return (results, error_message)."""
         if not self.conn:
             self.connect()
-        
         try:
             logger.debug(f"Executing query: {query}")
             result = self.cursor.execute(query)
-            return result.fetchall()
+            data = result.fetchall()
+            if return_error:
+                return data, None
+            return data
         except Exception as e:
             logger.error(f"Error executing query: {str(e)}\nQuery: {query}")
+            if return_error:
+                return None, str(e)
             return None
     
     def get_table_schema(self, table_name="ucla_player_stats"):

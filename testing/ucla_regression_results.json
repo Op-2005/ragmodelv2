@@ -1,0 +1,821 @@
+[
+  {
+    "query": "Who scored the most points in a single game this season?",
+    "sql": "SELECT Name, Pts, Opponent, game_date\nFROM ucla_player_stats \nWHERE Name NOT IN ('Totals', 'TM', 'Team')\nORDER BY Pts DESC\nLIMIT 1",
+    "error": null,
+    "results": [
+      [
+        "Betts, Lauren",
+        33,
+        "Maryland",
+        "2025-01-26"
+      ]
+    ]
+  },
+  {
+    "query": "What was Lauren Betts' average points per game?",
+    "sql": "SELECT ROUND(AVG(\"Pts\"), 2) as avg_points\nFROM ucla_player_stats \nWHERE Name = 'Betts, Lauren' \nAND Name NOT IN ('Totals', 'TM', 'Team')",
+    "error": null,
+    "results": [
+      [
+        20.18
+      ]
+    ]
+  },
+  {
+    "query": "How many three-pointers did Kiki Rice make against Richmond?",
+    "sql": "SELECT \"3PTM\" \nFROM ucla_player_stats \nWHERE Name = 'Rice, Kiki' \nAND Opponent = 'Richmond' \nAND Name NOT IN ('Totals', 'TM', 'Team')",
+    "error": null,
+    "results": [
+      [
+        4
+      ]
+    ]
+  },
+  {
+    "query": "Which player had the most rebounds in the LSU game?",
+    "sql": "SELECT Name, Reb\nFROM ucla_player_stats \nWHERE Opponent = 'LSU' \nAND Name NOT IN ('Totals', 'TM', 'Team')\nORDER BY Reb DESC\nLIMIT 1;",
+    "error": null,
+    "results": [
+      [
+        "Jaquez, Gabriela",
+        8
+      ]
+    ]
+  },
+  {
+    "query": "How many assists did Gabriela Jaquez have this season?",
+    "sql": "SELECT SUM(\"Ast\") as total_assists\nFROM ucla_player_stats \nWHERE Name = 'Jaquez, Gabriela' \nAND Name NOT IN ('Totals', 'TM', 'Team')",
+    "error": null,
+    "results": [
+      [
+        68
+      ]
+    ]
+  },
+  {
+    "query": "Who is player number 51?",
+    "sql": "SELECT DISTINCT \"Name\", \"No\", \"first_name\", \"last_name\"\nFROM ucla_player_stats \nWHERE \"No\" = '51' \nAND \"Name\" NOT IN ('Totals', 'TM', 'Team')\nLIMIT 1;",
+    "error": null,
+    "results": [
+      [
+        "Betts, Lauren",
+        "51",
+        "Lauren",
+        "Betts"
+      ]
+    ]
+  },
+  {
+    "query": "What position does Londynn Jones play?",
+    "sql": "SELECT DISTINCT \"No\"\nFROM ucla_player_stats \nWHERE Name = 'Jones, Londynn' \nAND Name NOT IN ('Totals', 'TM', 'Team')\nLIMIT 1;",
+    "error": null,
+    "results": [
+      [
+        "3"
+      ]
+    ]
+  },
+  {
+    "query": "List all players who scored over 20 points in a game",
+    "sql": "SELECT DISTINCT Name, Pts, Opponent, game_date\nFROM ucla_player_stats \nWHERE Pts > 20 \nAND Name NOT IN ('Totals', 'TM', 'Team')\nORDER BY Pts DESC;",
+    "error": null,
+    "results": [
+      [
+        "Betts, Lauren",
+        33,
+        "Maryland",
+        "2025-01-26"
+      ],
+      [
+        "Betts, Lauren",
+        31,
+        "Colgate",
+        "2024-11-10"
+      ],
+      [
+        "Betts, Lauren",
+        31,
+        "Ole_Miss",
+        "2025-03-28"
+      ],
+      [
+        "Betts, Lauren",
+        30,
+        "Richmond",
+        "2025-03-23"
+      ],
+      [
+        "Betts, Lauren",
+        28,
+        "Nebraska2",
+        "2025-03-07"
+      ],
+      [
+        "Betts, Lauren",
+        26,
+        "UConn",
+        "2025-04-04"
+      ],
+      [
+        "Betts, Lauren",
+        26,
+        "Wisconsin",
+        "2025-02-26"
+      ],
+      [
+        "Betts, Lauren",
+        25,
+        "Indiana",
+        "2025-01-04"
+      ],
+      [
+        "Betts, Lauren",
+        25,
+        "Rutgers",
+        "2025-01-23"
+      ],
+      [
+        "Betts, Lauren",
+        24,
+        "Baylor",
+        "2025-01-20"
+      ],
+      [
+        "Rice, Kiki",
+        23,
+        "Richmond",
+        "2025-03-23"
+      ],
+      [
+        "Gardiner, Timea",
+        23,
+        "Arkansas",
+        "2024-11-17"
+      ],
+      [
+        "Jaquez, Gabriela",
+        23,
+        "Nebraska2",
+        "2025-03-07"
+      ],
+      [
+        "Betts, Lauren",
+        23,
+        "Washington",
+        "2024-12-08"
+      ],
+      [
+        "Betts, Lauren",
+        22,
+        "Illinois",
+        "2025-02-20"
+      ],
+      [
+        "Jones, Londynn",
+        22,
+        "Ohio_State2",
+        "2025-03-09"
+      ],
+      [
+        "Betts, Lauren",
+        22,
+        "Penn_St.",
+        "2025-01-15"
+      ],
+      [
+        "Betts, Lauren",
+        22,
+        "Iowa",
+        "2025-02-23"
+      ],
+      [
+        "Dugali\u0107, Angela",
+        22,
+        "Long Beach State",
+        "2024-12-14"
+      ],
+      [
+        "Betts, Lauren",
+        22,
+        "Long Beach State",
+        "2024-12-14"
+      ],
+      [
+        "Betts, Lauren",
+        21,
+        "Nebraska1",
+        "2024-12-29"
+      ],
+      [
+        "Jones, Londynn",
+        21,
+        "Oregon",
+        "2025-02-09"
+      ],
+      [
+        "Rice, Kiki",
+        21,
+        "Hawaii",
+        "2024-12-01"
+      ]
+    ]
+  },
+  {
+    "query": "Which player had the highest field goal percentage?",
+    "sql": "SELECT Name, \n       ROUND(CAST(FGM AS FLOAT) / NULLIF(FGA, 0) * 100, 2) as fg_percentage\nFROM ucla_player_stats \nWHERE Name NOT IN ('Totals', 'TM', 'Team')\n  AND FGA > 0\nGROUP BY Name, FGM, FGA\nORDER BY fg_percentage DESC\nLIMIT 1;",
+    "error": null,
+    "results": [
+      [
+        "Aarnisalo, Elina",
+        100.0
+      ]
+    ]
+  },
+  {
+    "query": "Who is the best three-point shooter on the team?",
+    "sql": "SELECT \n    Name,\n    SUM(\"3PTM\") as total_3pt_made,\n    SUM(\"3PTA\") as total_3pt_attempts,\n    ROUND(CAST(SUM(\"3PTM\") AS FLOAT) / NULLIF(SUM(\"3PTA\"), 0) * 100, 1) as three_pt_percentage,\n    COUNT(*) as games_played\nFROM ucla_player_stats\nWHERE Name NOT IN ('Totals', 'TM', 'Team')\nGROUP BY Name\nHAVING SUM(\"3PTA\") >= 10\nORDER BY three_pt_percentage DESC, total_3pt_made DESC",
+    "error": null,
+    "results": [
+      [
+        "Gardiner, Timea",
+        64,
+        162,
+        39.5,
+        36
+      ],
+      [
+        "Rice, Kiki",
+        31,
+        85,
+        36.5,
+        34
+      ],
+      [
+        "Jones, Londynn",
+        72,
+        205,
+        35.1,
+        37
+      ],
+      [
+        "Dugali\u0107, Angela",
+        32,
+        92,
+        34.8,
+        35
+      ],
+      [
+        "Jaquez, Gabriela",
+        31,
+        89,
+        34.8,
+        36
+      ],
+      [
+        "Aarnisalo, Elina",
+        17,
+        63,
+        27.0,
+        37
+      ],
+      [
+        "Cain, Avary",
+        7,
+        37,
+        18.9,
+        18
+      ],
+      [
+        "Barker, Janiah",
+        6,
+        33,
+        18.2,
+        36
+      ]
+    ]
+  },
+  {
+    "query": "What was the team's total score against South Carolina?",
+    "sql": "SELECT SUM(Pts) as total_points \nFROM ucla_player_stats \nWHERE Opponent = 'South_Carolina' \nAND \"Name\" NOT IN ('Totals', 'TM', 'Team')",
+    "error": null,
+    "results": [
+      [
+        77
+      ]
+    ]
+  },
+  {
+    "query": "Did UCLA beat Rutgers?",
+    "sql": "SELECT SUM(Pts) as ucla_score, Opponent\nFROM ucla_player_stats \nWHERE Opponent = 'Rutgers' \n  AND \"Name\" NOT IN ('Totals', 'TM', 'Team')\nGROUP BY Opponent",
+    "error": null,
+    "results": [
+      [
+        84,
+        "Rutgers"
+      ]
+    ]
+  },
+  {
+    "query": "How many points did UCLA score against Maryland?",
+    "sql": "SELECT SUM(\"Pts\") as total_points \nFROM ucla_player_stats \nWHERE \"Opponent\" = 'Maryland' \nAND \"Name\" NOT IN ('Totals', 'TM', 'Team');",
+    "error": null,
+    "results": [
+      [
+        82
+      ]
+    ]
+  },
+  {
+    "query": "Which game did Lauren Betts score her season high?",
+    "sql": "SELECT game_date, Opponent, \"Pts\", \"Name\"\nFROM ucla_player_stats \nWHERE \"Name\" NOT IN ('Totals', 'TM', 'Team')\nAND \"Name\" = 'Betts, Lauren'\nORDER BY \"Pts\" DESC\nLIMIT 1",
+    "error": null,
+    "results": [
+      [
+        "2025-01-26",
+        "Maryland",
+        33,
+        "Betts, Lauren"
+      ]
+    ]
+  },
+  {
+    "query": "What was the team's shooting percentage against LSU?",
+    "sql": "SELECT ROUND(CAST(SUM(FGM) AS FLOAT) / NULLIF(SUM(FGA), 0) * 100, 1) as shooting_percentage\nFROM ucla_player_stats \nWHERE Opponent = 'LSU' \nAND \"Name\" NOT IN ('Totals', 'TM', 'Team')",
+    "error": null,
+    "results": [
+      [
+        38.2
+      ]
+    ]
+  },
+  {
+    "query": "What was the team's average points per game?",
+    "sql": "SELECT ROUND(AVG(Pts), 2) as avg_points_per_game\nFROM ucla_player_stats \nWHERE \"Name\" NOT IN ('Totals', 'TM', 'Team')",
+    "error": null,
+    "results": [
+      [
+        8.1
+      ]
+    ]
+  },
+  {
+    "query": "Who had the most total rebounds for the season?",
+    "sql": "SELECT Name, SUM(Reb) as total_rebounds\nFROM ucla_player_stats \nWHERE Name NOT IN ('Totals', 'TM', 'Team')\nGROUP BY Name\nORDER BY total_rebounds DESC\nLIMIT 1",
+    "error": null,
+    "results": [
+      [
+        "Betts, Lauren",
+        323
+      ]
+    ]
+  },
+  {
+    "query": "Calculate the team's overall three-point percentage",
+    "sql": "SELECT ROUND(CAST(SUM(\"3PTM\") AS FLOAT) / NULLIF(SUM(\"3PTA\"), 0) * 100, 2) as three_point_percentage\nFROM ucla_player_stats\nWHERE \"Name\" NOT IN ('Totals', 'TM', 'Team')",
+    "error": null,
+    "results": [
+      [
+        33.55
+      ]
+    ]
+  },
+  {
+    "query": "Which player had the most consistent scoring across all games?",
+    "sql": "WITH player_scoring_stats AS (\n  SELECT \n    Name,\n    AVG(Pts) as avg_points,\n    (AVG((Pts - AVG(Pts)) * (Pts - AVG(Pts))))(Pts) as stddev_points,\n    COUNT(*) as games_played,\n    (AVG((Pts - AVG(Pts)) * (Pts - AVG(Pts))))(Pts) / CASE WHEN AVG(Pts) = 0 THEN 1 ELSE AVG(Pts) END as coefficient_of_variation\n  FROM ucla_player_stats\n  WHERE Name NOT IN ('Totals', 'TM', 'Team')\n  GROUP BY Name\n  HAVING COUNT(*) >= 5\n)\nSELECT \n  Name,\n  ROUND(avg_points, 2) as average_points,\n  ROUND(stddev_points, 2) as standard_deviation,\n  games_played,\n  ROUND(coefficient_of_variation, 3) as scoring_consistency\nFROM player_scoring_stats\nORDER BY coefficient_of_variation ASC\nLIMIT 10",
+    "error": "Unsupported SQL keyword for SQLite: STDDEV",
+    "results": null
+  },
+  {
+    "query": "What was the team's assist-to-turnover ratio?",
+    "sql": "SELECT ROUND(CAST(SUM(\"Ast\") AS FLOAT) / NULLIF(SUM(\"TO\"), 0), 2) as assist_turnover_ratio\nFROM ucla_player_stats\nWHERE \"Name\" NOT IN ('Totals', 'TM', 'Team') -- WARNING: OVER is not supported in SQLite.",
+    "error": "Unsupported SQL keyword for SQLite: OVER",
+    "results": null
+  },
+  {
+    "query": "Who is better at rebounding, Lauren Betts or Angela Dugali\\u0107?",
+    "sql": "SELECT \n    Name,\n    COUNT(*) as games_played,\n    AVG(Reb) as avg_rebounds,\n    SUM(Reb) as total_rebounds,\n    AVG(CAST(SPLIT_PART(\"OR-DR\", '-', 1) AS INTEGER)) as avg_offensive_rebounds,\n    AVG(CAST(SPLIT_PART(\"OR-DR\", '-', 2) AS INTEGER)) as avg_defensive_rebounds\nFROM ucla_player_stats \nWHERE Name NOT IN ('Totals', 'TM', 'Team')\nAND Name IN ('Betts, Lauren', 'Dugali\u0107, Angela')\nGROUP BY Name\nORDER BY avg_rebounds DESC;",
+    "error": "no such function: SPLIT_PART",
+    "results": null
+  },
+  {
+    "query": "Compare the scoring efficiency of Kiki Rice and Londynn Jones",
+    "sql": "WITH player_stats AS (\n  SELECT \n    Name,\n    SUM(Pts) as total_points,\n    SUM(FGM) as made_fg,\n    SUM(FGA) as attempted_fg,\n    SUM(3PTM) as made_3pt,\n    SUM(3PTA) as attempted_3pt,\n    SUM(FTM) as made_ft,\n    SUM(FTA) as attempted_ft,\n    ROUND(CAST(SUM(FGM) AS FLOAT) / NULLIF(SUM(FGA), 0) * 100, 1) as fg_percentage,\n    ROUND(CAST(SUM(3PTM) AS FLOAT) / NULLIF(SUM(3PTA), 0) * 100, 1) as three_pt_percentage,\n    ROUND(CAST(SUM(FTM) AS FLOAT) / NULLIF(SUM(FTA), 0) * 100, 1) as ft_percentage\n  FROM ucla_player_stats\n  WHERE Name NOT IN ('Totals', 'TM', 'Team')\n  AND Name IN ('Rice, Kiki', 'Jones, Londynn')\n  GROUP BY Name\n)\nSELECT *\nFROM player_stats\nORDER BY Name;",
+    "error": "unrecognized token: \"3PTM\"",
+    "results": null
+  },
+  {
+    "query": "Which player should get more minutes, Gabriela Jaquez or Timea Gardiner?",
+    "sql": "SELECT \n    p.Name,\n    COUNT(*) as games_played,\n    AVG(p.\"Min\") as avg_minutes,\n    SUM(p.\"Min\") as total_minutes\nFROM ucla_player_stats p\nWHERE p.Name IN ('Jaquez, Gabriela', 'Gardiner, Timea')\nAND p.Name NOT IN ('Totals', 'TM', 'Team')\nGROUP BY p.Name\nORDER BY avg_minutes DESC;",
+    "error": null,
+    "results": [
+      [
+        "Jaquez, Gabriela",
+        36,
+        26.805555555555557,
+        965
+      ],
+      [
+        "Gardiner, Timea",
+        36,
+        18.25,
+        657
+      ]
+    ]
+  },
+  {
+    "query": "Is Lauren Betts more effective against stronger or weaker opponents?",
+    "sql": "SELECT \n    \"Name\",\n    AVG(\"Pts\") as avg_points,\n    AVG(\"Reb\") as avg_rebounds,\n    AVG(\"FGM\")*100.0/NULLIF(AVG(\"FGA\"),0) as fg_percentage,\n    COUNT(*) as games_played,\n    AVG(\"Min\") as avg_minutes,\n    \"Opponent\"\nFROM ucla_player_stats\nWHERE \"Name\" NOT IN ('Totals', 'TM', 'Team')\nAND \"Name\" LIKE '%Betts%'\nGROUP BY \"Name\", \"Opponent\"\nORDER BY avg_points DESC, avg_rebounds DESC;",
+    "error": null,
+    "results": [
+      [
+        "Betts, Lauren",
+        33.0,
+        7.0,
+        93.33333333333333,
+        1,
+        34.0,
+        "Maryland"
+      ],
+      [
+        "Betts, Lauren",
+        31.0,
+        10.0,
+        93.75,
+        1,
+        30.0,
+        "Ole_Miss"
+      ],
+      [
+        "Betts, Lauren",
+        31.0,
+        9.0,
+        83.33333333333333,
+        1,
+        30.0,
+        "Colgate"
+      ],
+      [
+        "Betts, Lauren",
+        30.0,
+        14.0,
+        82.3529411764706,
+        1,
+        32.0,
+        "Richmond"
+      ],
+      [
+        "Betts, Lauren",
+        28.0,
+        13.0,
+        73.33333333333333,
+        1,
+        36.0,
+        "Nebraska2"
+      ],
+      [
+        "Betts, Lauren",
+        26.0,
+        10.0,
+        91.66666666666667,
+        1,
+        24.0,
+        "Wisconsin"
+      ],
+      [
+        "Betts, Lauren",
+        26.0,
+        5.0,
+        61.111111111111114,
+        1,
+        35.0,
+        "UConn"
+      ],
+      [
+        "Betts, Lauren",
+        25.0,
+        13.0,
+        75.0,
+        1,
+        29.0,
+        "Rutgers"
+      ],
+      [
+        "Betts, Lauren",
+        25.0,
+        12.0,
+        75.0,
+        1,
+        34.0,
+        "Indiana"
+      ],
+      [
+        "Betts, Lauren",
+        24.0,
+        9.0,
+        58.8235294117647,
+        1,
+        32.0,
+        "Baylor"
+      ],
+      [
+        "Betts, Lauren",
+        23.0,
+        3.0,
+        62.5,
+        1,
+        32.0,
+        "Washington"
+      ],
+      [
+        "Betts, Lauren",
+        22.0,
+        12.0,
+        62.5,
+        1,
+        33.0,
+        "Penn_St."
+      ],
+      [
+        "Betts, Lauren",
+        22.0,
+        12.0,
+        75.0,
+        1,
+        34.0,
+        "Iowa"
+      ],
+      [
+        "Betts, Lauren",
+        22.0,
+        10.0,
+        66.66666666666667,
+        1,
+        25.0,
+        "Long Beach State"
+      ],
+      [
+        "Betts, Lauren",
+        22.0,
+        7.0,
+        50.0,
+        1,
+        35.0,
+        "Illinois"
+      ],
+      [
+        "Betts, Lauren",
+        21.0,
+        8.0,
+        53.333333333333336,
+        1,
+        29.0,
+        "Nebraska1"
+      ],
+      [
+        "Betts, Lauren",
+        20.0,
+        12.0,
+        56.25,
+        1,
+        23.0,
+        "Fresno_St."
+      ],
+      [
+        "Betts, Lauren",
+        20.0,
+        12.0,
+        53.333333333333336,
+        1,
+        26.0,
+        "Arkansas"
+      ],
+      [
+        "Betts, Lauren",
+        19.0,
+        14.0,
+        61.53846153846154,
+        1,
+        34.0,
+        "Ohio_State1"
+      ],
+      [
+        "Betts, Lauren",
+        18.0,
+        13.0,
+        38.46153846153846,
+        1,
+        37.0,
+        "USC1"
+      ],
+      [
+        "Betts, Lauren",
+        18.0,
+        13.0,
+        75.0,
+        1,
+        36.0,
+        "Louisville"
+      ],
+      [
+        "Betts, Lauren",
+        18.0,
+        12.0,
+        46.666666666666664,
+        1,
+        24.0,
+        "UT Martin"
+      ],
+      [
+        "Betts, Lauren",
+        18.0,
+        3.0,
+        50.0,
+        1,
+        20.0,
+        "Hawaii"
+      ],
+      [
+        "Betts, Lauren",
+        17.0,
+        12.0,
+        77.77777777777777,
+        1,
+        23.0,
+        "Pepperdine"
+      ],
+      [
+        "Betts, Lauren",
+        17.0,
+        7.0,
+        62.5,
+        1,
+        22.0,
+        "Purdue"
+      ],
+      [
+        "Betts, Lauren",
+        17.0,
+        7.0,
+        50.0,
+        1,
+        25.0,
+        "LSU"
+      ],
+      [
+        "Betts, Lauren",
+        17.0,
+        5.0,
+        70.0,
+        1,
+        38.0,
+        "USC2"
+      ],
+      [
+        "Betts, Lauren",
+        14.0,
+        6.0,
+        66.66666666666667,
+        1,
+        25.0,
+        "Southern_U."
+      ],
+      [
+        "Betts, Lauren",
+        13.0,
+        10.0,
+        40.0,
+        1,
+        35.0,
+        "Michigan"
+      ],
+      [
+        "Betts, Lauren",
+        12.0,
+        6.0,
+        85.71428571428571,
+        1,
+        23.0,
+        "Ohio_State2"
+      ],
+      [
+        "Betts, Lauren",
+        11.0,
+        14.0,
+        62.5,
+        1,
+        37.0,
+        "South_Carolina"
+      ],
+      [
+        "Betts, Lauren",
+        11.0,
+        11.0,
+        45.45454545454545,
+        1,
+        32.0,
+        "Southern_California"
+      ],
+      [
+        "Betts, Lauren",
+        9.0,
+        6.0,
+        40.0,
+        1,
+        25.0,
+        "Oregon"
+      ],
+      [
+        "Betts, Lauren",
+        6.0,
+        6.0,
+        60.0,
+        1,
+        30.0,
+        "Minnesota"
+      ]
+    ]
+  },
+  {
+    "query": "Who performs better in close games, Kiki Rice or Londynn Jones?",
+    "sql": "WITH close_games AS (\n  SELECT *\n  FROM ucla_player_stats\n  WHERE ABS(\n    (SELECT Pts FROM ucla_player_stats WHERE Name='Totals' AND game_date=t1.game_date) -\n    (SELECT CAST(REGEXP_REPLACE(Opponent, '.*[^0-9]([0-9]+)$', '\\1') AS INTEGER) \n     FROM ucla_player_stats \n     WHERE Name='Totals' AND game_date=t1.game_date)\n  ) <= 10\n  AND Name NOT IN ('Totals', 'TM', 'Team')\n) \nSELECT \n  Name,\n  AVG(Pts) as avg_points,\n  AVG(Ast) as avg_assists,\n  AVG(Reb) as avg_rebounds,\n  AVG(Stl) as avg_steals,\n  AVG(CAST(FGM AS FLOAT) / NULLIF(FGA, 0)) as fg_percentage,\n  COUNT(*) as close_games_played\nFROM close_games\nWHERE Name IN ('Rice, Kiki', 'Jones, Londynn')\nGROUP BY Name",
+    "error": "no such column: t1.game_date",
+    "results": null
+  },
+  {
+    "query": "How did Lauren Betts and Kiki Rice perform against South Carolina?",
+    "sql": "SELECT \n    Name,\n    \"Min\",\n    FGM || '-' || FGA as \"FG\",\n    \"3PTM\" || '-' || \"3PTA\" as \"3PT\",\n    FTM || '-' || FTA as \"FT\",\n    \"Reb\",\n    \"Ast\",\n    \"TO\",\n    \"Blk\",\n    \"Stl\",\n    \"PF\",\n    \"Pts\"\nFROM ucla_player_stats \nWHERE Name NOT IN ('Totals', 'TM', 'Team')\nAND Name IN ('Betts, Lauren', 'Rice, Kiki')\nAND Opponent = 'South_Carolina'\nORDER BY Name;",
+    "error": null,
+    "results": [
+      [
+        "Betts, Lauren",
+        37,
+        "5-8",
+        "0-0",
+        "1-4",
+        14,
+        1,
+        4,
+        3,
+        4,
+        0,
+        11
+      ],
+      [
+        "Rice, Kiki",
+        29,
+        "5-11",
+        "0-2",
+        "1-1",
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        11
+      ]
+    ]
+  },
+  {
+    "query": "What's the combined scoring average of Londynn Jones and Gabriela Jaquez?",
+    "sql": "SELECT ROUND(AVG(Pts), 2) as avg_points\nFROM ucla_player_stats \nWHERE Name IN ('Jones, Londynn', 'Jaquez, Gabriela')\nAND Name NOT IN ('Totals', 'TM', 'Team')",
+    "error": null,
+    "results": [
+      [
+        9.01
+      ]
+    ]
+  },
+  {
+    "query": "Compare the performances of UCLA's starters and bench players",
+    "sql": "WITH player_stats AS (\n  SELECT \n    CASE WHEN \"No\" IN ('0','1','2','3','4','5') THEN 'Starter' ELSE 'Bench' END AS player_type,\n    AVG(\"Min\") as avg_minutes,\n    AVG(\"Pts\") as avg_points,\n    AVG(\"Reb\") as avg_rebounds,\n    AVG(\"Ast\") as avg_assists,\n    AVG(\"Stl\") as avg_steals,\n    AVG(\"Blk\") as avg_blocks,\n    AVG(\"TO\") as avg_turnovers,\n    AVG(CAST(\"FGM\" AS FLOAT)/\"FGA\"*100) as fg_percentage,\n    COUNT(DISTINCT game_date) as games_played\n  FROM ucla_player_stats\n  WHERE \"Name\" NOT IN ('Totals', 'TM', 'Team')\n  GROUP BY \n    CASE WHEN \"No\" IN ('0','1','2','3','4','5') THEN 'Starter' ELSE 'Bench' END\n)\nSELECT \n  player_type,\n  ROUND(avg_minutes, 1) as avg_minutes,\n  ROUND(avg_points, 1) as avg_points,\n  ROUND(avg_rebounds, 1) as avg_rebounds,\n  ROUND(avg_assists, 1) as avg_assists,\n  ROUND(avg_steals, 1) as avg_steals,\n  ROUND(avg_blocks, 1) as avg_blocks,\n  ROUND(avg_turnovers, 1) as avg_turnovers,\n  ROUND(fg_percentage, 1) as fg_percentage,\n  games_played\nFROM player_stats\nORDER BY player_type -- WARNING: OVER is not supported in SQLite.",
+    "error": "Unsupported SQL keyword for SQLite: OVER",
+    "results": null
+  },
+  {
+    "query": "How many points did Lauren Betts, Kiki Rice, and Londynn Jones score against Rutgers?",
+    "sql": "SELECT Name, Pts \nFROM ucla_player_stats \nWHERE Name IN ('Betts, Lauren', 'Rice, Kiki', 'Jones, Londynn')\nAND Opponent = 'Rutgers' \nAND Name NOT IN ('Totals', 'TM', 'Team')\nORDER BY Name;",
+    "error": null,
+    "results": [
+      [
+        "Betts, Lauren",
+        25
+      ],
+      [
+        "Jones, Londynn",
+        12
+      ],
+      [
+        "Rice, Kiki",
+        10
+      ]
+    ]
+  },
+  {
+    "query": "Which players improved the most from the beginning to the end of the season?",
+    "sql": "WITH player_early_stats AS (\n  SELECT \n    Name,\n    AVG(Pts) as early_pts,\n    AVG(\"TO\") as early_to,\n    AVG(Ast) as early_ast,\n    AVG(Reb) as early_reb\n  FROM ucla_player_stats\n  WHERE Name NOT IN ('Totals', 'TM', 'Team')\n  AND game_date <= (\n    SELECT MIN(game_date) + INTERVAL '30 days'\n    FROM ucla_player_stats\n  )\n  GROUP BY Name\n),\nplayer_late_stats AS (\n  SELECT \n    Name,\n    AVG(Pts) as late_pts,\n    AVG(\"TO\") as late_to,\n    AVG(Ast) as late_ast,\n    AVG(Reb) as late_reb\n  FROM ucla_player_stats\n  WHERE Name NOT IN ('Totals', 'TM', 'Team')\n  AND game_date >= (\n    SELECT MAX(game_date) - INTERVAL '30 days'\n    FROM ucla_player_stats\n  )\n  GROUP BY Name\n)\nSELECT \n  e.Name,\n  ROUND((l.late_pts - e.early_pts), 2) as pts_improvement,\n  ROUND((l.late_ast - e.early_ast), 2) as ast_improvement,\n  ROUND((l.late_reb - e.early_reb), 2) as reb_improvement,\n  ROUND((e.early_to - l.late_to), 2) as to_improvement\nFROM player_early_stats e\nJOIN player_late_stats l ON e.Name = l.Name\nORDER BY (\n  (l.late_pts - e.early_pts) + \n  (l.late_ast - e.early_ast) + \n  (l.late_reb - e.early_reb) + \n  (e.early_to - l.late_to)\n) DESC; -- WARNING: INTERVAL is not supported in SQLite.",
+    "error": "Unsupported SQL keyword for SQLite: INTERVAL",
+    "results": null
+  }
+]

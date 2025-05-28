@@ -18,6 +18,7 @@ class EntityExtractor:
         self.llm = llm_manager
         self.table_name = table_name
         self.entity_cache = {}  # Cache for entity resolution results
+        self.dataset_type = "ucla"
         
         # Pre-load common entities for faster matching
         self._load_common_entities()

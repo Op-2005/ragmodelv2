@@ -18,11 +18,33 @@ class SQLQueryGenerator:
         
         # Get database schema
         self.table_schema = self.db.get_table_schema(table_name=self.table_name)
+        
+        self.column_map = {
+            "points": "Pts",
+            "rebounds": "Reb",
+            "assists": "Ast",
+            "steals": "Stl",
+            "blocks": "Blk",
+            "turnovers": "TO",
+            "field goals": "FG",
+            "three pointers": "3PT",
+            "free throws": "FT",
+            "minutes": "Min",
+            "opponent": "Opponent",
+            "date": "game_date",
+            # Add more mappings as needed
+        }
     
     def generate_sql_query(self, user_query, extracted_entities=None):
         """Generate SQL query from user query and extracted entities."""
         # Format table schema for prompt
         schema_str = self._format_schema_for_prompt()
+        
+        # Map statistics in user query/entities to schema columns
+        if extracted_entities and extracted_entities.get("statistic"):
+            stat = extracted_entities["statistic"].lower()
+            if stat in self.column_map:
+                user_query = user_query.replace(stat, self.column_map[stat])
         
         # Create prompt for SQL generation
         prompt = f"""
@@ -56,6 +78,7 @@ class SQLQueryGenerator:
         
         # Extract just the SQL query (remove any explanations)
         sql_query = self._extract_sql_from_response(sql_query)
+        sql_query = self._sqlite_compat(sql_query)
         
         return sql_query
     
@@ -84,3 +107,26 @@ class SQLQueryGenerator:
         
         # Otherwise, just use the whole response
         return response.strip()
+
+    def _sqlite_compat(self, sql_query):
+        """Patch SQL for SQLite compatibility (e.g., replace STDDEV, unsupported functions)."""
+        # Replace STDDEV with custom aggregation (if needed)
+        if "STDDEV" in sql_query.upper():
+            # SQLite does not support STDDEV by default
+            # Replace with a workaround or raise a warning
+            sql_query = sql_query.replace("STDDEV", "(AVG((Pts - AVG(Pts)) * (Pts - AVG(Pts))))")
+            # This is a placeholder; for real stddev, use a custom aggregate or calculate in Python
+        # Remove unsupported PostgreSQL syntax
+        for keyword in ["ILIKE", "SIMILAR TO", "::", "INTERVAL", "DATE_TRUNC", "EXTRACT", "ARRAY", "UNNEST", "LEAD", "LAG", "RANK", "ROW_NUMBER", "OVER", "PARTITION BY"]:
+            if keyword in sql_query.upper():
+                sql_query += f" -- WARNING: {keyword} is not supported in SQLite."
+        return sql_query
+
+    def validate_sql(self, sql_query):
+        """Validate SQL for SQLite compatibility before execution."""
+        # Simple check for unsupported functions
+        unsupported = ["STDDEV", "ILIKE", "SIMILAR TO", "::", "INTERVAL", "DATE_TRUNC", "EXTRACT", "ARRAY", "UNNEST", "LEAD", "LAG", "RANK", "ROW_NUMBER", "OVER", "PARTITION BY"]
+        for kw in unsupported:
+            if kw in sql_query.upper():
+                return False, f"Unsupported SQL keyword for SQLite: {kw}"
+        return True, None
