@@ -1,5 +1,8 @@
 from langchain_core.prompts import PromptTemplate
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SQLQueryGenerator:
     """Generate SQL queries from natural language for UCLA women's basketball data."""
@@ -19,68 +22,323 @@ class SQLQueryGenerator:
         # Get database schema
         self.table_schema = self.db.get_table_schema(table_name=self.table_name)
         
+        # Map user statistics to actual column names
         self.column_map = {
             "points": "Pts",
-            "rebounds": "Reb",
+            "rebounds": "Reb", 
             "assists": "Ast",
             "steals": "Stl",
             "blocks": "Blk",
-            "turnovers": "TO",
+            "turnovers": '"TO"',
             "field goals": "FG",
-            "three pointers": "3PT",
+            "three pointers": '"3PTM"',
+            "three-pointers": '"3PTM"',
+            "three point": '"3PTM"',
+            "3pt": '"3PTM"',
+            "3-pt": '"3PTM"',
+            "threes": '"3PTM"',
             "free throws": "FT",
             "minutes": "Min",
             "opponent": "Opponent",
             "date": "game_date",
-            # Add more mappings as needed
+            "number": '"No"',
+            "jersey number": '"No"',
+            "player number": '"No"',
+            "field goal percentage": "(CAST(FGM AS FLOAT) / NULLIF(FGA, 0))",
+            "three point percentage": '(CAST("3PTM" AS FLOAT) / NULLIF("3PTA", 0))',
+            "free throw percentage": "(CAST(FTM AS FLOAT) / NULLIF(FTA, 0))",
+            "fg%": "(CAST(FGM AS FLOAT) / NULLIF(FGA, 0))",
+            "3pt%": '(CAST("3PTM" AS FLOAT) / NULLIF("3PTA", 0))',
+            "ft%": "(CAST(FTM AS FLOAT) / NULLIF(FTA, 0))",
+        }
+        
+        # SQLite unsupported features to detect and replace
+        self.unsupported_patterns = {
+            r'\bEXTRACT\s*\([^)]+\)': 'strftime',
+            r'\bINTERVAL\s+[\'"]?\d+[\'"]?\s+\w+': 'date function',
+            r'\bDATE_TRUNC\s*\([^)]+\)': 'strftime',
+            r'\bILIKE\b': 'LIKE',
+            r'\bSIMILAR\s+TO\b': 'LIKE',
+            r'::(text|integer|float|date)': 'CAST',
+            r'\bSTDDEV\s*\(': 'variance calculation',
+            r'\bVARIANCE\s*\(': 'variance calculation',
         }
     
-    def generate_sql_query(self, user_query, extracted_entities=None):
+    def generate_sql_query(self, user_query, extracted_entities=None, retry_count=0):
         """Generate SQL query from user query and extracted entities."""
+        # Apply column mapping to user query
+        mapped_query = self._apply_column_mapping(user_query, extracted_entities)
+        
         # Format table schema for prompt
         schema_str = self._format_schema_for_prompt()
         
-        # Map statistics in user query/entities to schema columns
+        # Create SQLite-specific prompt
+        prompt = self._create_sqlite_prompt(mapped_query, schema_str, extracted_entities)
+        
+        # Generate SQL query
+        try:
+            sql_query = self.llm.generate_text(prompt)
+            logger.info(f"LLM generated SQL: {sql_query}")
+        except Exception as e:
+            logger.error(f"LLM generation failed: {e}")
+            return None
+        
+        # Extract and clean SQL
+        sql_query = self._extract_sql_from_response(sql_query)
+        
+        # Apply SQLite compatibility fixes
+        sql_query = self._ensure_sqlite_compatibility(sql_query)
+        
+        # Validate the query
+        is_valid, validation_error = self.validate_sql(sql_query)
+        
+        if not is_valid and retry_count < 2:
+            logger.warning(f"Generated invalid SQL, retrying... Attempt {retry_count + 1}")
+            # Try again with more explicit SQLite constraints
+            return self.generate_sql_query(user_query, extracted_entities, retry_count + 1)
+        
+        return sql_query
+    
+    def _apply_column_mapping(self, user_query, extracted_entities):
+        """Apply column name mappings to the user query."""
+        mapped_query = user_query.lower()
+        
+        # Apply entity-based mapping
         if extracted_entities and extracted_entities.get("statistic"):
             stat = extracted_entities["statistic"].lower()
             if stat in self.column_map:
-                user_query = user_query.replace(stat, self.column_map[stat])
+                mapped_query = mapped_query.replace(stat, self.column_map[stat])
         
-        # Create prompt for SQL generation
-        prompt = f"""
-        You are an expert SQL query generator for a UCLA women's basketball statistics database.
+        # Apply general mappings
+        for user_term, db_column in self.column_map.items():
+            if user_term in mapped_query:
+                mapped_query = mapped_query.replace(user_term, db_column)
         
-        Given a natural language query, generate a valid SQL query to answer the question.
+        return mapped_query
+    
+    def _create_sqlite_prompt(self, user_query, schema_str, extracted_entities):
+        """Create a SQLite-specific prompt that explicitly forbids PostgreSQL syntax."""
+        entities_str = str(extracted_entities) if extracted_entities else 'None'
         
-        Database schema:
-        {schema_str}
+        return f"""
+You are an expert SQLite query generator for UCLA women's basketball statistics.
+
+CRITICAL SQLITE REQUIREMENTS:
+1. You MUST use ONLY SQLite-compatible syntax - NO PostgreSQL features
+2. FORBIDDEN: EXTRACT, INTERVAL, DATE_TRUNC, STDDEV, VARIANCE, ILIKE, ::, SIMILAR TO, SPLIT_PART
+3. For dates: Use strftime('%Y-%m-%d', date_column) instead of EXTRACT
+4. For standard deviation: Use custom calculation with AVG and subqueries
+5. For date arithmetic: Use date() function, not INTERVAL
+6. Use CAST(col AS REAL) for type conversion, not ::
+7. Use LIKE instead of ILIKE for case-insensitive matching
+
+COLUMN NAMING RULES:
+- Always use double quotes for columns with special characters: "3PTM", "3PTA", "TO"
+- Column names are case-sensitive: use exact names from schema
+- Available columns: Name, "No", Min, FG, "3PT", FT, "OR-DR", Reb, Ast, "TO", Blk, Stl, Pts, Opponent, game_date
+- For three-pointers made: "3PTM", for three-pointers attempted: "3PTA"
+- For turnovers: "TO" (must be quoted)
+
+Database schema:
+{schema_str}
+
+Extracted entities: {entities_str}
+
+User question: {user_query}
+
+IMPORTANT RULES:
+- Always exclude Name='Totals', Name='TM', Name='Team' (use WHERE Name NOT IN ('Totals', 'TM', 'Team'))
+- Put column names with special characters in double quotes (e.g., "TO", "3PTM", "3PTA")
+- For comparisons between players, return data for all mentioned players
+- Use SQLite date functions: date(), datetime(), strftime()
+- For aggregations, use SUM, AVG, COUNT, MIN, MAX (SQLite built-ins only)
+- Handle NULL values with NULLIF() or COALESCE()
+- For standard deviation, use: SQRT(AVG((col - avg_col) * (col - avg_col)))
+- For player number queries, use the "No" column
+- For efficiency calculations, use CAST(made AS REAL) / NULLIF(attempted, 0)
+- AVOID complex CTEs (WITH clauses) - use simple subqueries instead
+- Keep queries simple and avoid nested parentheses when possible
+- If you need multiple steps, use a simple subquery in FROM clause
+
+Examples of CORRECT SQLite syntax:
+- Three-pointers: SELECT "3PTM" FROM table WHERE "3PTM" > 0
+- Turnovers: SELECT "TO" FROM table WHERE "TO" < 5
+- Date filtering: WHERE date(game_date) >= date('2024-01-01')
+- Standard deviation: SELECT SQRT(AVG((Pts - avg_pts) * (Pts - avg_pts))) FROM (SELECT Pts, AVG(Pts) OVER() as avg_pts FROM table)
+- Type conversion: CAST(FGM AS REAL) / NULLIF(FGA, 0)
+- Player number: SELECT Name FROM table WHERE "No" = 51
+
+Generate ONLY the SQL query with no explanations or comments.
+"""
+    
+    def _ensure_sqlite_compatibility(self, sql_query):
+        """Apply comprehensive SQLite compatibility fixes."""
+        if not sql_query:
+            return sql_query
         
-        Extracted entities:
-        {extracted_entities if extracted_entities else 'None'}
+        original_query = sql_query
         
-        User question: {user_query}
+        # Fix common PostgreSQL -> SQLite conversions
+        replacements = {
+            # Date functions
+            r'EXTRACT\s*\(\s*YEAR\s+FROM\s+([^)]+)\)': r"strftime('%Y', \1)",
+            r'EXTRACT\s*\(\s*MONTH\s+FROM\s+([^)]+)\)': r"strftime('%m', \1)",
+            r'EXTRACT\s*\(\s*DAY\s+FROM\s+([^)]+)\)': r"strftime('%d', \1)",
+            
+            # Interval arithmetic
+            r"([^'\"]+)\s*\+\s*INTERVAL\s+'(\d+)'\s*DAY": r"date(\1, '+\2 days')",
+            r"([^'\"]+)\s*-\s*INTERVAL\s+'(\d+)'\s*DAY": r"date(\1, '-\2 days')",
+            r"([^'\"]+)\s*\+\s*INTERVAL\s+'(\d+)'\s*MONTH": r"date(\1, '+\2 months')",
+            r"([^'\"]+)\s*-\s*INTERVAL\s+'(\d+)'\s*MONTH": r"date(\1, '-\2 months')",
+            
+            # Type casting
+            r'::text': '',
+            r'::integer': '',
+            r'::float': '',
+            r'::date': '',
+            
+            # Case insensitive matching
+            r'\bILIKE\b': 'LIKE',
+            
+            # PostgreSQL functions not supported in SQLite
+            r'\bSPLIT_PART\s*\([^)]+\)': 'substr',
+            r'\bSTDDEV\s*\(\s*([^)]+)\s*\)': r'SQRT(AVG((\1 - sub_avg) * (\1 - sub_avg)))',
+            r'\bVARIANCE\s*\(\s*([^)]+)\s*\)': r'AVG((\1 - sub_avg) * (\1 - sub_avg))',
+            
+            # Fix column name quoting issues
+            r'\b3PTM\b': '"3PTM"',
+            r'\b3PTA\b': '"3PTA"',
+            r'\b3PT\b': '"3PT"',
+            r'\bTO\b(?!\s*\(|\s*,|\s*FROM|\s*WHERE|\s*ORDER|\s*GROUP)': '"TO"',
+            r'\bNo\b(?=\s*=|\s*>|\s*<|\s*IN)': '"No"',
+            r'\bOR-DR\b': '"OR-DR"',
+        }
         
-        IMPORTANT NOTES:
-        1. Exclude rows where Name='Totals' or Name='TM' or Name='Team' as these are team totals, not individual players.
-        2. When querying for individual player stats, always add WHERE Name NOT IN ('Totals', 'TM', 'Team') to your query.
-        3. Make sure the query is valid SQL and uses only columns that exist in the schema.
-        4. For comparison queries between players, use multiple SELECT statements or subqueries to get statistics for each player.
-        5. If the query is asking for a recommendation or comparison between players, return data for all players mentioned so the LLM can make the comparison.
-        6. CRITICAL: Always put column names in double quotes, especially for reserved SQL keywords. For example, use "TO" instead of TO for the turnovers column.
+        for pattern, replacement in replacements.items():
+            sql_query = re.sub(pattern, replacement, sql_query, flags=re.IGNORECASE)
         
-        Generate only the SQL query with no other text.
+        # Fix specific syntax issues that cause "near ')'" errors
+        # Remove empty WHERE clauses
+        sql_query = re.sub(r'WHERE\s*\)', ')', sql_query, flags=re.IGNORECASE)
+        sql_query = re.sub(r'WHERE\s*AND', 'WHERE', sql_query, flags=re.IGNORECASE)
+        sql_query = re.sub(r'WHERE\s*OR', 'WHERE', sql_query, flags=re.IGNORECASE)
         
-        SQL query:
-        """
+        # Fix malformed subqueries
+        sql_query = re.sub(r'\(\s*\)', '(SELECT 1)', sql_query)
         
-        # Generate SQL query
-        sql_query = self.llm.generate_text(prompt)
+        # Fix double-double quotes issue
+        sql_query = re.sub(r'""([^"]+)""', r'"\1"', sql_query)
         
-        # Extract just the SQL query (remove any explanations)
-        sql_query = self._extract_sql_from_response(sql_query)
-        sql_query = self._sqlite_compat(sql_query)
+        # Fix malformed CTE queries (missing WITH keyword)
+        if re.search(r'^\s*\(\s*SELECT', sql_query, re.IGNORECASE | re.MULTILINE):
+            # If query starts with ( SELECT but no WITH, it's likely a malformed CTE
+            if not re.search(r'\bWITH\b', sql_query, re.IGNORECASE):
+                # Try to fix by adding WITH and proper CTE structure
+                sql_query = re.sub(r'^\s*\(\s*SELECT', 'WITH temp_table AS (SELECT', sql_query, flags=re.IGNORECASE | re.MULTILINE)
+                # Find the closing parenthesis and add proper CTE ending
+                if sql_query.count('(') > sql_query.count(')'):
+                    sql_query = sql_query.replace('\n)\nSELECT', ')\nSELECT')
+        
+        # Fix orphaned closing parentheses
+        sql_query = re.sub(r'\)\s*SELECT', ') SELECT', sql_query, flags=re.IGNORECASE)
+        
+        # Fix incomplete parentheses in complex queries
+        open_parens = sql_query.count('(')
+        close_parens = sql_query.count(')')
+        if open_parens > close_parens:
+            # Add missing closing parentheses at the end
+            sql_query += ')' * (open_parens - close_parens)
+        elif close_parens > open_parens:
+            # Remove extra closing parentheses
+            extra_closes = close_parens - open_parens
+            for _ in range(extra_closes):
+                sql_query = re.sub(r'\)\s*$', '', sql_query, count=1)
+        
+        # Fix double quotes around simple column names that don't need them
+        simple_columns = ['Name', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Min', 'FG', 'FT', 'Opponent', 'game_date']
+        for col in simple_columns:
+            sql_query = re.sub(f'"{col}"', col, sql_query)
+        
+        # Ensure proper quoting for special columns
+        special_columns = {
+            'TO': '"TO"',
+            '3PTM': '"3PTM"',
+            '3PTA': '"3PTA"',
+            '3PT': '"3PT"',
+            'No': '"No"',
+            'OR-DR': '"OR-DR"'
+        }
+        
+        for col, quoted_col in special_columns.items():
+            # Only quote if not already quoted and in a column context
+            pattern = f'\\b{re.escape(col)}\\b(?!["\'])'
+            sql_query = re.sub(pattern, quoted_col, sql_query)
+        
+        # Log if significant changes were made
+        if sql_query != original_query:
+            logger.info(f"Applied SQLite compatibility fixes")
+            logger.debug(f"Original: {original_query}")
+            logger.debug(f"Fixed: {sql_query}")
         
         return sql_query
+    
+    def validate_sql(self, sql_query):
+        """Comprehensive SQL validation for SQLite compatibility."""
+        if not sql_query or sql_query.strip() == "":
+            return False, "Empty SQL query"
+        
+        # Check for forbidden PostgreSQL syntax
+        forbidden_patterns = [
+            (r'\bEXTRACT\b', "EXTRACT function not supported in SQLite"),
+            (r'\bINTERVAL\b', "INTERVAL syntax not supported in SQLite"),
+            (r'\bDATE_TRUNC\b', "DATE_TRUNC function not supported in SQLite"),
+            (r'\bSTDDEV\b', "STDDEV function not supported in SQLite"),
+            (r'\bVARIANCE\b', "VARIANCE function not supported in SQLite"),
+            (r'\bILIKE\b', "ILIKE operator not supported in SQLite"),
+            (r'::', "PostgreSQL type casting (::) not supported in SQLite"),
+            (r'\bSIMILAR\s+TO\b', "SIMILAR TO operator not supported in SQLite"),
+            (r'\bARRAY\b', "ARRAY type not supported in SQLite"),
+            (r'\bUNNEST\b', "UNNEST function not supported in SQLite"),
+            (r'\bSPLIT_PART\b', "SPLIT_PART function not supported in SQLite"),
+        ]
+        
+        for pattern, error_msg in forbidden_patterns:
+            if re.search(pattern, sql_query, re.IGNORECASE):
+                return False, error_msg
+        
+        # Check for unquoted special column names
+        unquoted_special_columns = [
+            (r'\b3PTM\b(?!")', "Column 3PTM must be quoted as \"3PTM\""),
+            (r'\b3PTA\b(?!")', "Column 3PTA must be quoted as \"3PTA\""),
+            (r'\bTO\b(?!\s*\(|\s*,|\s*FROM|\s*WHERE|\s*ORDER|\s*GROUP)(?!")', "Column TO must be quoted as \"TO\""),
+            (r'\bNo\b(?=\s*=|\s*>|\s*<|\s*IN)(?!")', "Column No must be quoted as \"No\""),
+        ]
+        
+        for pattern, error_msg in unquoted_special_columns:
+            if re.search(pattern, sql_query, re.IGNORECASE):
+                return False, error_msg
+        
+        # Check for syntax issues that cause "near ')'" errors
+        syntax_issues = [
+            (r'WHERE\s*\)', "Empty WHERE clause"),
+            (r'WHERE\s*AND\s', "WHERE clause starts with AND"),
+            (r'WHERE\s*OR\s', "WHERE clause starts with OR"),
+            (r'\(\s*\)', "Empty parentheses"),
+        ]
+        
+        for pattern, error_msg in syntax_issues:
+            if re.search(pattern, sql_query, re.IGNORECASE):
+                return False, f"Syntax error: {error_msg}"
+        
+        # Check for required table name
+        if self.table_name not in sql_query:
+            return False, f"Query must reference table '{self.table_name}'"
+        
+        # Basic SQL syntax validation
+        if not re.search(r'\bSELECT\b', sql_query, re.IGNORECASE):
+            return False, "Query must contain SELECT statement"
+        
+        return True, None
     
     def _format_schema_for_prompt(self):
         """Format database schema for LLM prompt."""
@@ -95,6 +353,9 @@ class SQLQueryGenerator:
     
     def _extract_sql_from_response(self, response):
         """Extract SQL query from LLM response."""
+        if not response:
+            return ""
+        
         # Try to find SQL between triple backticks
         sql_match = re.search(r'```sql\s*(.*?)\s*```', response, re.DOTALL)
         if sql_match:
@@ -105,28 +366,11 @@ class SQLQueryGenerator:
         if sql_match:
             return sql_match.group(1).strip()
         
-        # Otherwise, just use the whole response
-        return response.strip()
-
-    def _sqlite_compat(self, sql_query):
-        """Patch SQL for SQLite compatibility (e.g., replace STDDEV, unsupported functions)."""
-        # Replace STDDEV with custom aggregation (if needed)
-        if "STDDEV" in sql_query.upper():
-            # SQLite does not support STDDEV by default
-            # Replace with a workaround or raise a warning
-            sql_query = sql_query.replace("STDDEV", "(AVG((Pts - AVG(Pts)) * (Pts - AVG(Pts))))")
-            # This is a placeholder; for real stddev, use a custom aggregate or calculate in Python
-        # Remove unsupported PostgreSQL syntax
-        for keyword in ["ILIKE", "SIMILAR TO", "::", "INTERVAL", "DATE_TRUNC", "EXTRACT", "ARRAY", "UNNEST", "LEAD", "LAG", "RANK", "ROW_NUMBER", "OVER", "PARTITION BY"]:
-            if keyword in sql_query.upper():
-                sql_query += f" -- WARNING: {keyword} is not supported in SQLite."
-        return sql_query
-
-    def validate_sql(self, sql_query):
-        """Validate SQL for SQLite compatibility before execution."""
-        # Simple check for unsupported functions
-        unsupported = ["STDDEV", "ILIKE", "SIMILAR TO", "::", "INTERVAL", "DATE_TRUNC", "EXTRACT", "ARRAY", "UNNEST", "LEAD", "LAG", "RANK", "ROW_NUMBER", "OVER", "PARTITION BY"]
-        for kw in unsupported:
-            if kw in sql_query.upper():
-                return False, f"Unsupported SQL keyword for SQLite: {kw}"
-        return True, None
+        # Look for SELECT statements
+        sql_match = re.search(r'(SELECT.*?;?)\s*$', response, re.DOTALL | re.IGNORECASE)
+        if sql_match:
+            return sql_match.group(1).strip()
+        
+        # Otherwise, just use the whole response and clean it
+        cleaned = re.sub(r'^[^S]*?(SELECT)', r'\1', response, flags=re.IGNORECASE | re.DOTALL)
+        return cleaned.strip()
